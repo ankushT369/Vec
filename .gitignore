@@ -37,6 +37,8 @@
 *.out
 *.app
 benchmark
+plot_benchmark
 
 # debug information files
 *.dwo
+*.out

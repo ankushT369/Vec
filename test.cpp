@@ -14,7 +14,7 @@ void print_centered(const std::string& msg, int width = 50) {
 }
 
 int main() {
-        constexpr int N = 299999999;
+        constexpr int64_t N = 500000000;
 
         print_separator();
         print_centered("Vector Benchmark");
@@ -28,6 +28,8 @@ int main() {
         for (int i = 0; i < N; ++i) {
                 myvec.push(i);
         }
+
+        std::cout << myvec.at(499999999) << '\n';
 
         auto end_custom = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> time_custom = end_custom - start_custom;

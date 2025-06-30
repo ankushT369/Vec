@@ -20,7 +20,6 @@ enum class page_status{
 };
 
 
-
 //-------------------- Unit page-----------------------
 class Page_t {
 public:
@@ -78,7 +77,6 @@ Chunk_t<T>* allocate_chuck_t(Page_t* page_block, size_t index) {
         return chunk;
 }
 
-
 template<typename T>
 class ChunkList_t {
 private:
@@ -127,6 +125,7 @@ private:
         uint64_t total_nodes;
         Page_t* next_addr;
         size_t temp_size;
+        size_t list_capacity;
 
 public:
         Vec() {
@@ -138,6 +137,7 @@ public:
                 _capacity               = data_per_page;
                 total_nodes             = 0;
                 temp_size               = 0;
+                list_capacity           = ((1 << (PAGE_LEVEL_SIZE)) - 1) * data_per_page;
 
                 /* For now 'new' is used for the dynammic memory allocation */
                 Page_t* page_block      = allocate_level(INIT_LEVEL_INDEX);
@@ -169,9 +169,12 @@ public:
                 temp_size = 0;
 
                 Page_t* page_block      = allocate_level(level_idx);
-                Chunk_t<T>* chunk       = allocate_chunk_t<T>(page_block, level_idx);
+                if(level_idx == INIT_LEVEL_INDEX) {
+                        Chunk_t<T>* chunk       = allocate_chunk_t<T>(page_block, level_idx);
+                        list->setChunk(list_idx, chunk);
+                }
 
-                list->setChunk(list_idx, chunk);
+                list->getChunk(list_idx)->setLevel(level_idx, page_block);
 
                 next_addr               = list->getChunk(list_idx)->getLevel(level_idx);
 
@@ -182,9 +185,27 @@ public:
                 temp_size++;
         }
 
-
-
         T& at(size_t index) {
+                /*
+                if (index >= _size) {
+                        throw std::out_of_range("Index out of range in Vec::at()");
+                }
+                */
+
+                size_t list_index       = index / list_capacity; 
+                size_t inner_index      = index % list_capacity;
+
+                int x                   = inner_index / data_per_page;
+                int i                   = 31 - __builtin_clz(x + 1);  // Efficient log2
+
+                int start               = data_per_page * ((1 << i) - 1);
+                int offset              = inner_index - start;
+
+                Page_t* page            = list->getChunk(list_index)->getLevel(i);
+
+                char* raw_ptr           = static_cast<char*>(page->page) + (offset * sizeof(T));
+                return *reinterpret_cast<T*>(raw_ptr);
+
                 //throw std::out_of_range("unimplemented");
         }
 

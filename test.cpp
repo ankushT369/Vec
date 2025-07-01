@@ -29,8 +29,6 @@ int main() {
                 myvec.push(i);
         }
 
-        std::cout << myvec.at(499999999) << '\n';
-
         auto end_custom = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> time_custom = end_custom - start_custom;
 

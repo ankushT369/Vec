@@ -122,8 +122,7 @@ private:
         size_t limit;
         size_t _size;
         size_t _capacity;
-        uint64_t total_nodes;
-        Page_t* next_addr;
+        Page_t* addr;
         size_t temp_size;
         size_t list_capacity;
 
@@ -135,7 +134,6 @@ public:
                 limit                   = (1 << INIT_LEVEL_INDEX) * data_per_page;
                 _size                   = 0;
                 _capacity               = data_per_page;
-                total_nodes             = 0;
                 temp_size               = 0;
                 list_capacity           = ((1 << (PAGE_LEVEL_SIZE)) - 1) * data_per_page;
 
@@ -144,14 +142,14 @@ public:
                 Chunk_t<T>* chunk       = allocate_chunk_t<T>(page_block, level_idx);
                 list                    = allocate_chunklist_t<T>(chunk, list_idx);
 
-                next_addr               = list->getChunk(list_idx)->getLevel(level_idx);
+                addr               = list->getChunk(list_idx)->getLevel(level_idx);
         }
 
         void push(const T& value) {
                 if (temp_size < limit) {
-                        void* raw_ptr = static_cast<char*>(next_addr->page) + next_addr->offset;
+                        void* raw_ptr = static_cast<char*>(addr->page) + addr->offset;
                         new (raw_ptr) T(value);
-                        next_addr->offset += sizeof(T);
+                        addr->offset += sizeof(T);
                         _size++;
                         temp_size++;
                         return;
@@ -176,11 +174,11 @@ public:
 
                 list->getChunk(list_idx)->setLevel(level_idx, page_block);
 
-                next_addr               = list->getChunk(list_idx)->getLevel(level_idx);
+                addr               = list->getChunk(list_idx)->getLevel(level_idx);
 
-                void* raw_ptr           = static_cast<char*>(next_addr->page) + next_addr->offset;
+                void* raw_ptr           = static_cast<char*>(addr->page) + addr->offset;
                 new (raw_ptr) T(value);
-                next_addr->offset       += sizeof(T);
+                addr->offset       += sizeof(T);
                 _size++;
                 temp_size++;
         }
@@ -196,7 +194,7 @@ public:
                 size_t inner_index      = index % list_capacity;
 
                 int x                   = inner_index / data_per_page;
-                int i                   = 31 - __builtin_clz(x + 1);  // Efficient log2
+                int i                   = 31 - __builtin_clz(x + 1);  // Efficient log2 hardware accelerated
 
                 int start               = data_per_page * ((1 << i) - 1);
                 int offset              = inner_index - start;
